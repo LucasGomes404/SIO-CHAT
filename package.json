@@ -1,0 +1,15 @@
+{
+  "name": "SioChat",
+  "version": "1.0.0",
+  "description": "Mon premier serveur chat !",
+  "main": "js/server.js",
+  "scripts": {
+    "start": "node js/server.js"
+  },
+  "dependencies": {
+    "express": "^4.17.3",
+    "path": "^0.12.7",
+    "socket.io": "^4.4.1"
+  },
+  "author": "A.Avci"
+}
