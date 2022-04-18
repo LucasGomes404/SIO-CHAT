@@ -3,7 +3,6 @@
 const socket = io();
 var id_salon = 'Salon';
 var lesMessages = [];
-socket.emit('set-pseudo', prompt("Pseudo ?"));
 const messages = document.getElementById('messages');
 const users = document.getElementById('users');
 const form = document.getElementById('form');

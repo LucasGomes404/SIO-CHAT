@@ -58,7 +58,7 @@ app.get('/client.js',(req, res) => {
 
 app.get('/bootstrap.min.js', (req, res) => {
   res.sendFile(__dirname +'bootstrap.min.js');
-});
+}); 
 
 app.get('/style.css', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'css/style.css'));
@@ -76,7 +76,24 @@ app.get('/loginstyle.css'), (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'css/loginstyle.css'));
 }
 
-//Gestion évènement pour géré le Socket
+//Gestion évènement pour géré le Socket et la connexion au salon
+
+app.post('/login', async(req, res) => {
+  const conn = await db.getConnection();
+  const sql = "SELECT * FROM user WHERE pseudo = ? AND password = ?";
+  const rows = await conn.query(sql, [req.body.login, req.body.password]);
+  await conn.end();
+
+  if(rows.length > 0) {
+    infosUtilisateur = {
+      mail: rows[0].mail,
+      pseudo: rows[0].pseudo,
+    };
+    req.redirect('/salon');
+  } else {
+    res.send("Erreur ! Identifiant ou e-mail incorrect !");
+  }
+});
 
 io.on('connection',(socket) => {
   // Socket de saisie du pseudo
