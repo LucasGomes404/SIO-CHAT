@@ -2,8 +2,18 @@
 
 const express = require('express');
 const app = express();
-const http = require('http');
 
+const session = require('express-session');
+const mariadb = require('mariadb');
+const db = mariadb.createPool({
+  host: '127.0.0.1',
+  user: 'root',
+  password: 'root',
+  database: 'sio_chat'
+});
+let infosUtilisateur;
+
+const http = require('http');
 const server = http.createServer(app);
 const {Server} = require("socket.io");
 const io = new Server(server);
@@ -11,7 +21,14 @@ const io = new Server(server);
 var path = require("path");
 const PORT = 8080;
 var msg = [];
+
+app.use(session({
+  secret: 'secret',
+  resave: true,
+  saveUninitialized: true
+}));
 app.use(express.json());
+app.use(express.urlencoded({extended: true}));
 
 //Port d'écoute 
 
@@ -21,17 +38,43 @@ server.listen(PORT, () => {
 
 //Génère les routes pour le serveur
 
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'index.html'));
+app.get('/salon', (req, res) => {
+  if(req.session.loggedin) {
+    res.sendFile(path.join(__dirname, '..', 'index.html'));
+  } else {
+    res.send("Erreur ! Accès non autorisé !");
+  }
+  console.log(req.sessionID);
+  console.log(req.session);
 });
 
-app.get('/client',(req, res) =>{
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'login.html'));
+});
+
+app.get('/client.js',(req, res) => {
   res.sendFile(__dirname + '/client.js');
+});
+
+app.get('/bootstrap.min.js', (req, res) => {
+  res.sendFile(__dirname +'bootstrap.min.js');
 });
 
 app.get('/style.css', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'css/style.css'));
 });
+
+app.get('/bootstrap.min.css', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'css/bootstrap.min.css'));
+});
+
+app.get('/Login-Form-Basic.css', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'css/Login-Form-Basic.css'));
+});
+
+app.get('/loginstyle.css'), (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'css/loginstyle.css'));
+}
 
 //Gestion évènement pour géré le Socket
 
