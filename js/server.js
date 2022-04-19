@@ -9,7 +9,8 @@ const db = mariadb.createPool({
   host: '127.0.0.1',
   user: 'root',
   password: 'root',
-  database: 'sio_chat'
+  database: 'sio_chat',
+  port: '8082'
 });
 let infosUtilisateur;
 
@@ -40,7 +41,7 @@ server.listen(PORT, () => {
 
 app.get('/salon', (req, res) => {
   if(req.session.loggedin) {
-    res.sendFile(path.join(__dirname, '..', 'index.html'));
+    res.sendFile(path.join(__dirname, '..', '/index.html'));
   } else {
     res.send("Erreur ! Accès non autorisé !");
   }
@@ -49,7 +50,7 @@ app.get('/salon', (req, res) => {
 });
 
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'login.html'));
+  res.sendFile(path.join(__dirname, '..', '/login.html'));
 });
 
 app.get('/client.js',(req, res) => {
@@ -80,16 +81,18 @@ app.get('/loginstyle.css'), (req, res) => {
 
 app.post('/login', async(req, res) => {
   const conn = await db.getConnection();
-  const sql = "SELECT * FROM user WHERE pseudo = ? AND password = ?";
-  const rows = await conn.query(sql, [req.body.login, req.body.password]);
+  const sql = "SELECT * FROM user WHERE mail = ? AND password = ?";
+  const rows = await conn.query(sql, [req.body.mail, req.body.password]);
   await conn.end();
+  console.log(req.body.mail);
 
   if(rows.length > 0) {
     infosUtilisateur = {
       mail: rows[0].mail,
       pseudo: rows[0].pseudo,
     };
-    req.redirect('/salon');
+    req.session.loggedin = true;
+    res.sendFile(path.join(__dirname, '..', 'index.html'));
   } else {
     res.send("Erreur ! Identifiant ou e-mail incorrect !");
   }
@@ -97,11 +100,10 @@ app.post('/login', async(req, res) => {
 
 io.on('connection',(socket) => {
   // Socket de saisie du pseudo
-  socket.on('set-pseudo',(pseudo) => {
-    console.log(pseudo + " vient de se connecter à " + new Date());
-    socket.nickname = pseudo;
+    console.log(infosUtilisateur.mail + " vient de se connecter à " + new Date());
+    socket.mail = infosUtilisateur.mail;
     room();
-  });
+  
 
   //Réception des pseudo et les transformer en lien cliquable 
   function room() {
@@ -111,7 +113,7 @@ io.on('connection',(socket) => {
         // console.log(item); DEBUG MODE 
         utilisateur.push({
           client_id : item.id,
-          pseudo_client : item.nickname
+          pseudo_client : item.mail
         });
       }); 
       io.emit('get-pseudo', utilisateur)
@@ -121,11 +123,11 @@ io.on('connection',(socket) => {
 
   socket.on('emission_message',(Message, id) => {
     console.log(id);
-    console.log(socket.nickname + " à écrit : " + Message + " le : " + new Date());
+    console.log(socket.mail + " à écrit : " + Message + " le : " + new Date());
     var Message = {
       emet_id: socket.id,
       dest_ID: id,
-      pseudo: socket.nickname,
+      pseudo: socket.mail,
       msg: Message,
       recu: false
     }
